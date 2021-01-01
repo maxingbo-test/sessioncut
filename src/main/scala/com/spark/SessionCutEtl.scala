@@ -4,8 +4,40 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
+import org.slf4j.LoggerFactory
 
 
+/**
+会话切割项目的程序入口
+方案一：jars打到submit里面，所以项目包用 spark-sessioncut-1.0-SNAPSHOT.jar
+方案二：submit没有打入jars，所以要 spark-sessioncut-1.0-SNAPSHOT-jar-with-dependencies.jar
+
+./spark-submit --class com.spark.SessionCutEtl \
+--master spark://hadoop1:7077 \
+--deploy-mode client \
+--driver-memory 1g \
+--executor-memory 1g \
+--executor-cores 1 \
+--total-executor-cores 2 \
+--jars /opt/module/spark/spark-course/parquet-avro-1.8.1.jar \
+--conf spark.SessionCutEtl.visitLogsInputPath=hdfs://hadoop1:9000/user/sparksessioncut/visit_log.txt \
+--conf spark.SessionCutEtl.cookieLogsLabelPath=hdfs://hadoop1:9000/user/sparksessioncut/cookie_label.txt \
+--conf spark.SessionCutEtl.outputPath=hdfs://hadoop1:9000/user/sparksessioncut/output \
+/opt/module/spark/spark-course/spark-sessioncut-1.0-SNAPSHOT.jar text
+
+或者用：
+./spark-submit --class com.spark.SessionCutEtl \
+--master spark://hadoop1:7077 \
+--deploy-mode client \
+--driver-memory 1g \
+--executor-memory 1g \
+--executor-cores 1 \
+--total-executor-cores 2 \
+--conf spark.SessionCutEtl.visitLogsInputPath=hdfs://hadoop1:9000/user/sparksessioncut/visit_log.txt \
+--conf spark.SessionCutEtl.cookieLogsLabelPath=hdfs://hadoop1:9000/user/sparksessioncut/cookie_label.txt \
+--conf spark.SessionCutEtl.outputPath=hdfs://hadoop1:9000/user/sparksessioncut/output \
+/opt/module/spark/spark-course/spark-sessioncut-1.0-SNAPSHOT-jar-with-dependencies.jar parquet
+  */
 object SessionCutEtl {
     // 可放在数据库中的
     private val logTypeSet = Set("click","pageview")
@@ -16,20 +48,39 @@ object SessionCutEtl {
                   ,"jd.com"->"level3"
                   ,"youku.com"->"level4")
 
+    private val logger = LoggerFactory.getLogger("SessionCutEtl")
+
     def main(args: Array[String]): Unit = {
 
-        val conf: SparkConf = new SparkConf().setMaster("local").setAppName("sessioncut")
+        val conf: SparkConf = new SparkConf().setAppName("sessioncut")
+        if(!conf.contains("spark.master")){
+            conf.setMaster("local[*]")
+        }
         //开启kryo序列化机制
         conf.set("spark.serializer","org.apache.spark.serializer.KryoSerializer")
+
+        //通过配置拿到输入输出路径
+        val visitLogsPath = conf.get("spark.SessionCutEtl.visitLogsInputPath"
+                                                        ,"data/visit_log.txt")
+        val cookieLogsLabelPath = conf.get("spark.SessionCutEtl.cookieLogsLabelPath"
+                                                        ,"data/cookie_label.txt")
+        val outputPath = conf.get("spark.SessionCutEtl.outputPath"
+                                                        ,"data/output")
+
+        val outputFileType = args(0)
+
+        logger.info(s"==========outputFileType==========${outputFileType}")
+
         val sc: SparkContext = new SparkContext(conf)
         // 广播变量注册domainLabelMap
         val broadcastDomain: Broadcast[Map[String, String]] = sc.broadcast(domainLabelMap)
 
-        val rowRdd: RDD[String] = sc.textFile("data/visit_log.txt")
+        val rowRdd: RDD[String] = sc.textFile(visitLogsPath)
 
         // 解析原始日志（生成TrackerLog表）
         val tracklogRdd: RDD[TrackerLog] = rowRdd.flatMap(RawLogParser.parse(_))
                                                  .persist(StorageLevel.MEMORY_AND_DISK)
+        logger.info(s"=============tracklogRdd==============${tracklogRdd.count()}")
 
         // 数据清洗
         val filterRdd: RDD[TrackerLog] = tracklogRdd.filter(tracklog =>
@@ -69,7 +120,7 @@ object SessionCutEtl {
           * (cookie3,执着)
           * (cookie4,执行力很强)
           */
-        val cookieLabelRdd: RDD[String] = sc.textFile("data/cookie_label.txt")
+        val cookieLabelRdd: RDD[String] = sc.textFile(cookieLogsLabelPath)
         val cookieLabelMapRdd: RDD[(String, String)] = cookieLabelRdd.map { case line =>
             val tmps: Array[String] = line.split("\\|")
             (tmps(0), tmps(1))
@@ -88,9 +139,11 @@ object SessionCutEtl {
             session
         }.persist(StorageLevel.MEMORY_AND_DISK)
 
+        logger.info(s"=============overRdd==============${overRdd.count()}")
+
         // 保存数据
-        OutputComponent.fromOutputFileType("text")
-                    .writeOutputData(sc,"data/output",tracklogRdd, overRdd)
+        OutputComponent.fromOutputFileType(outputFileType)
+                    .writeOutputData(sc,outputPath,tracklogRdd, overRdd)
 
         sc.stop()
     }

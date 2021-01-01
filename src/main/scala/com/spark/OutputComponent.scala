@@ -27,8 +27,8 @@ trait OutputComponent {
     * @return
     */
   protected def checkPath(sc: SparkContext, trackerlogOutputPath: String): AnyVal = {
-      var fileSystem = FileSystem.get(sc.hadoopConfiguration)
       val path = new Path(trackerlogOutputPath)
+      var fileSystem = path.getFileSystem(sc.hadoopConfiguration)
       if (fileSystem.exists(path)) {
         // 递归删除
         fileSystem.delete(path, true)
