@@ -1,0 +1,12 @@
+{"log_type": "pageview", "log_server_time": "2017-09-04 12:00:00", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"}
+{"log_type": "click", "log_server_time": "2017-09-04 12:00:02", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"}
+{"log_type": "pageview", "log_server_time": "2017-09-04 12:00:01", "cookie": "cookie2", "ip": "127.0.0.4", "url": "https:\/\/www.baidu.com"}
+{"log_type": "click", "log_server_time": "2017-09-04 12:00:04", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"}
+{"log_type": "pageview", "log_server_time": "2017-09-04 12:00:02", "cookie": "cookie2", "ip": "127.0.0.4", "url": "http:\/\/news.baidu.com"}
+{"log_type": "click", "log_server_time": "2017-09-04 12:00:03", "cookie": "cookie2", "ip": "127.0.0.4", "url": "http:\/\/news.baidu.com"}
+{"log_type": "pageview", "log_server_time": "2017-09-04 12:00:04", "cookie": "cookie2", "ip": "127.0.0.4", "url": "http:\/\/music.baidu.com\/?fr=tieba"}
+{"log_type": "pageview", "log_server_time": "2017-09-04 12:45:01", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"}
+{"log_type": "click", "log_server_time": "2017-09-04 12:45:02", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"}
+{"log_type": "click", "log_server_time": "2017-09-04 12:45:03", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"}
+{"log_type": "hhhh", "log_server_time": "2017-09-04 12:45:03", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"}
+{"log_type": "3333ss", "log_server_time": "2017-09-04 12:45:03", "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"}

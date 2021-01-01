@@ -1,4 +1,4 @@
-{"namespace": "com.twq.spark.session",
+{"namespace": "com.spark",
  "type": "record",
  "name": "TrackerSession",
  "fields": [
