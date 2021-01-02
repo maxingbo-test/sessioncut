@@ -67,9 +67,7 @@ object SessionCutEtl {
         val outputPath = conf.get("spark.SessionCutEtl.outputPath"
                                                         ,"data/output")
 
-        val outputFileType = args(0)
-
-        logger.info(s"==========outputFileType==========${outputFileType}")
+        val outputFileType = "text"
 
         val sc: SparkContext = new SparkContext(conf)
         // 广播变量注册domainLabelMap
@@ -80,7 +78,6 @@ object SessionCutEtl {
         // 解析原始日志（生成TrackerLog表）
         val tracklogRdd: RDD[TrackerLog] = rowRdd.flatMap(RawLogParser.parse(_))
                                                  .persist(StorageLevel.MEMORY_AND_DISK)
-        logger.info(s"=============tracklogRdd==============${tracklogRdd.count()}")
 
         // 数据清洗
         val filterRdd: RDD[TrackerLog] = tracklogRdd.filter(tracklog =>
@@ -93,20 +90,25 @@ object SessionCutEtl {
 
         // cookie 分组后，value 数据切割
         /**
-          * (cookie1,{
-          *     "session_id": "3cbb295c-3628-4eb2-8d19-0393e036aa9f",
-          *     "session_server_time": "2017-09-04 12:45:01",
-          *     "cookie": "cookie1",
-          *     "cookie_label": "",
-          *     "ip": "127.0.0.3",
-          *     "landing_url": "https:\/\/tieba.baidu.com\/index.html",
-          *     "pageview_count": 1,
-          *     "click_count": 2,
-          *     "domain": "tieba.baidu.com",
-          *     "domain_label": "level2"
-          *     })
+          * flatMapValues 前
+          * (cookie2,
+          *     CompactBuffer(
+          *         {"log_type": "pageview", "log_server_time": "2017-09-04 12:00:01"
+          *                     , "cookie": "cookie2", "ip": "127.0.0.4", "url": "https:\/\/www.baidu.com"},
+          *         {"log_type": "pageview", "log_server_time": "2017-09-04 12:00:02"
+          *                     , "cookie": "cookie2", "ip": "127.0.0.4", "url": "http:\/\/news.baidu.com"},
+          *         {"log_type": "click", "log_server_time": "2017-09-04 12:00:03"
+          *                     , "cookie": "cookie2", "ip": "127.0.0.4", "url": "http:\/\/news.baidu.com"}
+          *     )
+          * )
+          *
+          * flatMapValues 后
+          * {"log_type": "pageview", "log_server_time": "2017-09-04 12:00:01", "cookie": "cookie2"
+          *                                         , "ip": "127.0.0.4", "url": "https:\/\/www.baidu.com"}
+          * {"log_type": "pageview", "log_server_time": "2017-09-04 12:00:00", "cookie": "cookie1"
+          *                                         , "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"}
           */
-        //  with PageViewSessionLogCut 加上它，调用的是继承了 SessionLogCut 的 PageViewSessionLogCut
+        // with PageViewSessionLogCut 加上它，调用的是继承了 SessionLogCut 的 PageViewSessionLogCut
         // SessionLogCut 父类，PageViewSessionLogCut子类
         val trackerSession: RDD[(String, TrackerSession)] = userGroupRdd.flatMapValues { case iter =>
             val processor = new OneUserTrackLogProcessor(iter.toArray) with PageViewSessionLogCut

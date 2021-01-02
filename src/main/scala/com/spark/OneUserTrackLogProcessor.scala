@@ -5,25 +5,13 @@ import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * 单个user（cookie）下面的所有tracklogs进行session切割
+  * 聚合后的数据结构，做value处理
   *
   * 数据:
-  * (cookie1,
-  *   CompactBuffer(
-  *     {"log_type": "pageview", "log_server_time": "2017-09-04 12:00:00",
-  *                 "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"},
-  *     {"log_type": "click", "log_server_time": "2017-09-04 12:00:02",
-  *                 "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"},
-  *     {"log_type": "click", "log_server_time": "2017-09-04 12:00:04",
-  *                 "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"},
-  *     {"log_type": "pageview", "log_server_time": "2017-09-04 12:45:01",
-  *                 "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"},
-  *     {"log_type": "click", "log_server_time": "2017-09-04 12:45:02",
-  *                 "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"},
-  *     {"log_type": "click", "log_server_time": "2017-09-04 12:45:03",
-  *                 "cookie": "cookie1", "ip": "127.0.0.3", "url": "https:\/\/tieba.baidu.com\/index.html"}
-  *     )
-  * )
+  * {"log_type": "pageview", "log_server_time": "2017-09-04 12:00:01", "cookie": "cookie2"
+  *                                                 , "ip": "127.0.0.4", "url": "https:\/\/www.baidu.com"}
+  * {"log_type": "pageview", "log_server_time": "2017-09-04 12:00:00", "cookie": "cookie1"
+  *                                                 , "ip": "127.0.0.3", "url": "https:\/\/www.baidu.com"}
   *
   * 处理结构：
   * var session_id: CharSequence = null

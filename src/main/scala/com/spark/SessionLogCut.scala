@@ -18,9 +18,6 @@ trait SessionLogCut {
         // 存放所有会话buffer
         val initBuilder = ArrayBuffer.newBuilder[ArrayBuffer[TrackerLog]]
         // foldLeft 从左至右遍历
-        // initBuilder, Option.empty[TrackerLog] 当前日志的上一条返回到这里（prelog 是上一条日志，currlog 是当前日志）
-        // 第一次执行时，prelog 是 Option.empty[TrackerLog] ， currlog 是当前条
-        // builder 是 initBuilder 所有会话组
         val cuttedLogsBuf = sortedTrackLogs
                   .foldLeft((initBuilder, Option.empty[TrackerLog])) { case ((builder, prelog), currlog) =>
             // 当前log时间
@@ -32,7 +29,7 @@ trait SessionLogCut {
                 prelog.get.getLogServerTime.toString).getTime >= 1000 * 60 * 30) {
                 // 同一个会话 session buffer，存入到所有会话 session buffer里
                 builder += oneCuttingSessionLogs.clone()
-                // 同一个会话session情况，因为下个会话要来了
+                // 同一个会话session清空，因为下个会话要来了
                 oneCuttingSessionLogs.clear()
               }
             }
